@@ -3,11 +3,17 @@ import { t } from "./i18n";
 
 export const startHour = 8;
 export const endHour = 22;
-export const hourHeight = 72;
+export const hourHeight = 96;
+export const minimumVisualBlockMinutes = 60;
 
 export const minutesFromTime = (value: string) => {
   const [hours, minutes] = value.split(":").map(Number);
   return hours * 60 + minutes;
+};
+
+export const getVisualBlockHeight = (durationMinutes: number) => {
+  const visualMinutes = Math.max(durationMinutes, minimumVisualBlockMinutes);
+  return (visualMinutes / 60) * hourHeight;
 };
 
 export const shiftDate = (value: string, offset: number) => {

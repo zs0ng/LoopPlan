@@ -5,6 +5,7 @@ import {
   endHour,
   formatDisplayDate,
   getDateMetaLabel,
+  getVisualBlockHeight,
   hourHeight,
   minutesFromTime,
   startHour,
@@ -39,6 +40,7 @@ export function TimelineBoard({
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [dropPreview, setDropPreview] = useState<{ hour: number; minute: number } | null>(null);
+  const timelineGridHeight = (endHour - startHour + 1) * hourHeight;
 
   const previewLabel = useMemo(() => {
     if (!dropPreview) {
@@ -105,6 +107,12 @@ export function TimelineBoard({
       <div
         ref={gridRef}
         className={`timeline-grid ${isDragOver ? "drag-over" : ""}`}
+        style={
+          {
+            "--timeline-hour-height": `${hourHeight}px`,
+            minHeight: `${timelineGridHeight}px`
+          } as CSSProperties
+        }
         onDragOver={(event) => {
           event.preventDefault();
           event.dataTransfer.dropEffect = "copy";
@@ -183,7 +191,7 @@ function TimeBlockCard({
   onSelect: () => void;
 }) {
   const top = ((minutesFromTime(block.start) - startHour * 60) / 60) * hourHeight;
-  const height = (block.duration / 60) * hourHeight;
+  const height = getVisualBlockHeight(block.duration);
 
   return (
     <button
