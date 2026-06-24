@@ -1,29 +1,68 @@
-import type { CSSProperties } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { localize, t } from "../i18n";
 import type { Language, TimeBlock, ViewMode } from "../types";
-import { endHour, formatDisplayDate, getDateMetaLabel, hourHeight, minutesFromTime, startHour, shiftDate } from "../utils";
+import {
+  endHour,
+  formatDisplayDate,
+  getDateMetaLabel,
+  hourHeight,
+  minutesFromTime,
+  startHour,
+  shiftDate
+} from "../utils";
 
 type TimelineBoardProps = {
+  draggedTaskTitle?: string | null;
   language: Language;
   selectedBlockId: string | null;
   selectedDate: string;
   timeBlocks: TimeBlock[];
   viewMode: ViewMode;
   onDateChange: (date: string) => void;
+  onDropTask: (dropHour: number, dropMinute: number) => void;
   onSelectBlock: (blockId: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
 };
 
 export function TimelineBoard({
+  draggedTaskTitle,
   language,
   selectedBlockId,
   selectedDate,
   timeBlocks,
   viewMode,
   onDateChange,
+  onDropTask,
   onSelectBlock,
   onViewModeChange
 }: TimelineBoardProps) {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dropPreview, setDropPreview] = useState<{ hour: number; minute: number } | null>(null);
+
+  const previewLabel = useMemo(() => {
+    if (!dropPreview) {
+      return null;
+    }
+
+    return `${String(dropPreview.hour).padStart(2, "0")}:${String(dropPreview.minute).padStart(2, "0")}`;
+  }, [dropPreview]);
+
+  const getDropPreviewFromClientY = (clientY: number) => {
+    if (!gridRef.current) {
+      return null;
+    }
+
+    const rect = gridRef.current.getBoundingClientRect();
+    const relativeY = Math.min(Math.max(clientY - rect.top, 0), rect.height);
+    const totalMinutes = startHour * 60 + Math.round(relativeY / (hourHeight / 2)) * 30;
+    const clampedMinutes = Math.max(startHour * 60, Math.min((endHour - 1) * 60 + 30, totalMinutes));
+    return {
+      hour: Math.floor(clampedMinutes / 60),
+      minute: clampedMinutes % 60
+    };
+  };
+
   return (
     <main className="timeline-panel">
       <header className="timeline-toolbar">
@@ -63,7 +102,33 @@ export function TimelineBoard({
         <button className="primary-button">+ {t(language, "addTimeBlock")}</button>
       </div>
 
-      <div className="timeline-grid">
+      <div
+        ref={gridRef}
+        className={`timeline-grid ${isDragOver ? "drag-over" : ""}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          setIsDragOver(true);
+          setDropPreview(getDropPreviewFromClientY(event.clientY));
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setIsDragOver(false);
+            setDropPreview(null);
+          }
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          const nextDropPreview = getDropPreviewFromClientY(event.clientY);
+
+          if (nextDropPreview) {
+            onDropTask(nextDropPreview.hour, nextDropPreview.minute);
+          }
+
+          setIsDragOver(false);
+          setDropPreview(null);
+        }}
+      >
         {Array.from({ length: endHour - startHour + 1 }, (_, index) => {
           const hour = startHour + index;
           const label = `${String(hour).padStart(2, "0")}:00`;
@@ -84,6 +149,18 @@ export function TimelineBoard({
             onSelect={() => onSelectBlock(block.id)}
           />
         ))}
+
+        {isDragOver && dropPreview ? (
+          <div
+            className="timeline-drop-preview"
+            style={{
+              top: `${((dropPreview.hour * 60 + dropPreview.minute - startHour * 60) / 60) * hourHeight}px`
+            }}
+          >
+            <span>{previewLabel}</span>
+            <strong>{draggedTaskTitle ?? t(language, "taskDropTitle")}</strong>
+          </div>
+        ) : null}
 
         <div className="timeline-drop-hint">
           <span>☾</span>

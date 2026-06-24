@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { tasks, templates, timeBlocks } from "./data";
-import { shiftDate } from "./utils";
+import { endHour, shiftDate } from "./utils";
 import type { CategoryKey, Language, NavKey, Task, TimeBlock, ViewMode } from "./types";
 import { TodayPlanPage } from "./pages/TodayPlanPage";
 import { TomorrowPlanPage } from "./pages/TomorrowPlanPage";
@@ -19,6 +19,8 @@ function App() {
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
   const [selectedDate, setSelectedDate] = useState(todayDate);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>("tb-1");
+  const [timelineBlocks, setTimelineBlocks] = useState<TimeBlock[]>(timeBlocks);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
   const visibleTasks = useMemo<Task[]>(() => {
@@ -30,8 +32,8 @@ function App() {
   }, [activeCategory]);
 
   const visibleBlocks = useMemo<TimeBlock[]>(
-    () => timeBlocks.filter((block) => block.date === selectedDate),
-    [selectedDate]
+    () => timelineBlocks.filter((block) => block.date === selectedDate),
+    [selectedDate, timelineBlocks]
   );
 
   const selectedBlock = visibleBlocks.find((block) => block.id === selectedBlockId) ?? visibleBlocks[0] ?? null;
@@ -54,6 +56,37 @@ function App() {
     }
   };
 
+  const handleDropTask = (dropHour: number, dropMinute: number) => {
+    if (!draggedTask) {
+      return;
+    }
+
+    const startMinutes = dropHour * 60 + dropMinute;
+    const endMinutes = startMinutes + draggedTask.duration;
+    const clampedEnd = Math.min(endHour * 60, endMinutes);
+    const newBlock: TimeBlock = {
+      id: `tb-${crypto.randomUUID()}`,
+      taskId: draggedTask.id,
+      title: draggedTask.title,
+      date: selectedDate,
+      start: `${String(dropHour).padStart(2, "0")}:${String(dropMinute).padStart(2, "0")}`,
+      end: `${String(Math.floor(clampedEnd / 60)).padStart(2, "0")}:${String(clampedEnd % 60).padStart(2, "0")}`,
+      duration: clampedEnd - startMinutes,
+      category: draggedTask.category,
+      icon: draggedTask.icon,
+      color: draggedTask.color,
+      note: {
+        zh: "从任务库拖拽创建",
+        en: "Created by dragging from the task library."
+      },
+      status: "planned"
+    };
+
+    setTimelineBlocks((current) => [...current, newBlock]);
+    setSelectedBlockId(newBlock.id);
+    setDraggedTask(null);
+  };
+
   return (
     <div className="app-shell">
       <div className="window-frame">
@@ -68,6 +101,7 @@ function App() {
         {renderPage({
           activeCategory,
           activeNav,
+          draggedTask,
           language,
           selectedBlock,
           selectedBlockId,
@@ -78,8 +112,11 @@ function App() {
           viewMode,
           onCategoryChange: setActiveCategory,
           onDateChange: setSelectedDate,
+          onDropTask: handleDropTask,
           onLanguageChange: setLanguage,
           onSelectBlock: setSelectedBlockId,
+          onTaskDragEnd: () => setDraggedTask(null),
+          onTaskDragStart: setDraggedTask,
           onViewModeChange: setViewMode
         })}
       </div>
@@ -90,6 +127,7 @@ function App() {
 type RenderPageProps = {
   activeCategory: CategoryKey;
   activeNav: NavKey;
+  draggedTask: Task | null;
   language: Language;
   selectedBlock: TimeBlock | null;
   selectedBlockId: string | null;
@@ -100,8 +138,11 @@ type RenderPageProps = {
   viewMode: ViewMode;
   onCategoryChange: (category: CategoryKey) => void;
   onDateChange: (date: string) => void;
+  onDropTask: (dropHour: number, dropMinute: number) => void;
   onLanguageChange: (language: Language) => void;
   onSelectBlock: (blockId: string) => void;
+  onTaskDragEnd: () => void;
+  onTaskDragStart: (task: Task) => void;
   onViewModeChange: (mode: ViewMode) => void;
 };
 
@@ -111,6 +152,7 @@ function renderPage(props: RenderPageProps) {
       return (
         <TodayPlanPage
           activeCategory={props.activeCategory}
+          draggedTaskTitle={props.draggedTask?.title[props.language] ?? null}
           language={props.language}
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
@@ -120,7 +162,10 @@ function renderPage(props: RenderPageProps) {
           viewMode={props.viewMode}
           onCategoryChange={props.onCategoryChange}
           onDateChange={props.onDateChange}
+          onDropTask={props.onDropTask}
           onSelectBlock={props.onSelectBlock}
+          onTaskDragEnd={props.onTaskDragEnd}
+          onTaskDragStart={props.onTaskDragStart}
           onViewModeChange={props.onViewModeChange}
         />
       );
@@ -128,6 +173,7 @@ function renderPage(props: RenderPageProps) {
       return (
         <TomorrowPlanPage
           activeCategory={props.activeCategory}
+          draggedTaskTitle={props.draggedTask?.title[props.language] ?? null}
           language={props.language}
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
@@ -137,7 +183,10 @@ function renderPage(props: RenderPageProps) {
           viewMode={props.viewMode}
           onCategoryChange={props.onCategoryChange}
           onDateChange={props.onDateChange}
+          onDropTask={props.onDropTask}
           onSelectBlock={props.onSelectBlock}
+          onTaskDragEnd={props.onTaskDragEnd}
+          onTaskDragStart={props.onTaskDragStart}
           onViewModeChange={props.onViewModeChange}
         />
       );

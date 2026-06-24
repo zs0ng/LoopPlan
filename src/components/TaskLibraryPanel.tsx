@@ -8,6 +8,8 @@ type TaskLibraryPanelProps = {
   tasks: Task[];
   title: string;
   onCategoryChange: (category: CategoryKey) => void;
+  onTaskDragStart?: (task: Task) => void;
+  onTaskDragEnd?: () => void;
 };
 
 const categories: CategoryKey[] = ["all", "study", "work", "life", "fitness"];
@@ -18,7 +20,9 @@ export function TaskLibraryPanel({
   subtitle,
   tasks,
   title,
-  onCategoryChange
+  onCategoryChange,
+  onTaskDragStart,
+  onTaskDragEnd
 }: TaskLibraryPanelProps) {
   return (
     <section className="task-panel">
@@ -45,7 +49,17 @@ export function TaskLibraryPanel({
 
       <div className="task-list">
         {tasks.map((task) => (
-          <button key={task.id} className="task-card">
+          <button
+            key={task.id}
+            className="task-card"
+            draggable
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "copy";
+              event.dataTransfer.setData("text/task-id", task.id);
+              onTaskDragStart?.(task);
+            }}
+            onDragEnd={() => onTaskDragEnd?.()}
+          >
             <span className="task-icon" style={{ background: `${task.color}20`, color: task.color }}>
               {task.icon}
             </span>
