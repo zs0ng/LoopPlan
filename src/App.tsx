@@ -3,8 +3,7 @@ import { Sidebar } from "./components/Sidebar";
 import { tasks, templates, timeBlocks } from "./data";
 import { endHour, shiftDate, startHour } from "./utils";
 import type { CategoryKey, Language, NavKey, Task, TimeBlock, ViewMode } from "./types";
-import { TodayPlanPage } from "./pages/TodayPlanPage";
-import { TomorrowPlanPage } from "./pages/TomorrowPlanPage";
+import { PlanningPage } from "./pages/PlanningPage";
 import { TaskLibraryPage } from "./pages/TaskLibraryPage";
 import { TemplatesPage } from "./pages/TemplatesPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -191,10 +190,11 @@ function renderPage(props: RenderPageProps) {
   switch (props.activeNav) {
     case "today":
       return (
-        <TodayPlanPage
+        <PlanningPage
           activeCategory={props.activeCategory}
           draggedTaskTitle={props.draggedTaskTitle}
           language={props.language}
+          pageKey="today"
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
           selectedDate={props.selectedDate}
@@ -213,10 +213,11 @@ function renderPage(props: RenderPageProps) {
       );
     case "tomorrow":
       return (
-        <TomorrowPlanPage
+        <PlanningPage
           activeCategory={props.activeCategory}
           draggedTaskTitle={props.draggedTaskTitle}
           language={props.language}
+          pageKey="tomorrow"
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
           selectedDate={props.selectedDate}

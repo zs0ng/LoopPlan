@@ -4,10 +4,11 @@ import { TimelineBoard } from "../components/TimelineBoard";
 import { t } from "../i18n";
 import type { CategoryKey, Language, Task, TimeBlock, ViewMode } from "../types";
 
-type TomorrowPlanPageProps = {
+type PlanningPageProps = {
   activeCategory: CategoryKey;
   draggedTaskTitle?: string | null;
   language: Language;
+  pageKey: "today" | "tomorrow";
   selectedBlock: TimeBlock | null;
   selectedBlockId: string | null;
   selectedDate: string;
@@ -24,17 +25,17 @@ type TomorrowPlanPageProps = {
   onViewModeChange: (mode: ViewMode) => void;
 };
 
-export function TomorrowPlanPage(props: TomorrowPlanPageProps) {
-  const { activeCategory, draggedTaskTitle, language, selectedBlock, selectedBlockId, selectedDate, tasks, timeBlocks, viewMode } = props;
+export function PlanningPage(props: PlanningPageProps) {
+  const { activeCategory, draggedTaskTitle, language, pageKey, selectedBlock, selectedBlockId, selectedDate, tasks, timeBlocks, viewMode } = props;
 
   return (
     <>
       <TaskLibraryPanel
         activeCategory={activeCategory}
         language={language}
-        subtitle={t(language, "pages").tomorrow.subtitle}
+        subtitle={t(language, "pages")[pageKey].subtitle}
         tasks={tasks}
-        title={t(language, "pages").tomorrow.title}
+        title={t(language, "pages")[pageKey].title}
         onCategoryChange={props.onCategoryChange}
         onTaskDragEnd={props.onTaskDragEnd}
         onTaskDragStart={props.onTaskDragStart}
