@@ -1,8 +1,7 @@
 import type { CategoryKey, NavKey, Task, Template, TimeBlock } from "./types";
 
 export const navItems: Array<{ key: NavKey; icon: string }> = [
-  { key: "today", icon: "◫" },
-  { key: "tomorrow", icon: "◧" },
+  { key: "planning", icon: "◫" },
   { key: "library", icon: "▤" },
   { key: "templates", icon: "▣" },
   { key: "stats", icon: "◩" },

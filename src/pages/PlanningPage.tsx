@@ -8,7 +8,6 @@ type PlanningPageProps = {
   activeCategory: CategoryKey;
   draggedTaskTitle?: string | null;
   language: Language;
-  pageKey: "today" | "tomorrow";
   selectedBlock: TimeBlock | null;
   selectedBlockId: string | null;
   selectedDate: string;
@@ -26,16 +25,16 @@ type PlanningPageProps = {
 };
 
 export function PlanningPage(props: PlanningPageProps) {
-  const { activeCategory, draggedTaskTitle, language, pageKey, selectedBlock, selectedBlockId, selectedDate, tasks, timeBlocks, viewMode } = props;
+  const { activeCategory, draggedTaskTitle, language, selectedBlock, selectedBlockId, selectedDate, tasks, timeBlocks, viewMode } = props;
 
   return (
     <>
       <TaskLibraryPanel
         activeCategory={activeCategory}
         language={language}
-        subtitle={t(language, "pages")[pageKey].subtitle}
+        subtitle={t(language, "pages").planning.subtitle}
         tasks={tasks}
-        title={t(language, "pages")[pageKey].title}
+        title={t(language, "pages").planning.title}
         onCategoryChange={props.onCategoryChange}
         onTaskDragEnd={props.onTaskDragEnd}
         onTaskDragStart={props.onTaskDragStart}

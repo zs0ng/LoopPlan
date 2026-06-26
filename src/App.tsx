@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { tasks, templates, timeBlocks } from "./data";
-import { endHour, shiftDate, startHour } from "./utils";
+import { endHour, startHour } from "./utils";
 import type { CategoryKey, Language, NavKey, Task, TimeBlock, ViewMode } from "./types";
 import { PlanningPage } from "./pages/PlanningPage";
 import { TaskLibraryPage } from "./pages/TaskLibraryPage";
@@ -28,7 +28,7 @@ const getScheduledRange = (dropHour: number, dropMinute: number, duration: numbe
 };
 
 function App() {
-  const [activeNav, setActiveNav] = useState<NavKey>("today");
+  const [activeNav, setActiveNav] = useState<NavKey>("planning");
   const [language, setLanguage] = useState<Language>("zh");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
@@ -54,21 +54,13 @@ function App() {
   const selectedBlock = visibleBlocks.find((block) => block.id === selectedBlockId) ?? visibleBlocks[0] ?? null;
 
   const handleBrandClick = () => {
-    setActiveNav("today");
+    setActiveNav("planning");
     setSelectedDate(todayDate);
     setSelectedBlockId("tb-1");
   };
 
   const handleNavChange = (key: NavKey) => {
     setActiveNav(key);
-
-    if (key === "today") {
-      setSelectedDate(todayDate);
-    }
-
-    if (key === "tomorrow") {
-      setSelectedDate(shiftDate(todayDate, 1));
-    }
   };
 
   const handleTimelineDrop = (dropHour: number, dropMinute: number) => {
@@ -188,36 +180,12 @@ type RenderPageProps = {
 
 function renderPage(props: RenderPageProps) {
   switch (props.activeNav) {
-    case "today":
+    case "planning":
       return (
         <PlanningPage
           activeCategory={props.activeCategory}
           draggedTaskTitle={props.draggedTaskTitle}
           language={props.language}
-          pageKey="today"
-          selectedBlock={props.selectedBlock}
-          selectedBlockId={props.selectedBlockId}
-          selectedDate={props.selectedDate}
-          tasks={props.tasks}
-          timeBlocks={props.timeBlocks}
-          viewMode={props.viewMode}
-          onCategoryChange={props.onCategoryChange}
-          onDateChange={props.onDateChange}
-          onDropTask={props.onDropTask}
-          onSelectBlock={props.onSelectBlock}
-          onTaskDragEnd={props.onTaskDragEnd}
-          onTaskDragStart={props.onTaskDragStart}
-          onTimeBlockDragStart={props.onTimeBlockDragStart}
-          onViewModeChange={props.onViewModeChange}
-        />
-      );
-    case "tomorrow":
-      return (
-        <PlanningPage
-          activeCategory={props.activeCategory}
-          draggedTaskTitle={props.draggedTaskTitle}
-          language={props.language}
-          pageKey="tomorrow"
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
           selectedDate={props.selectedDate}

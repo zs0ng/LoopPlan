@@ -1,6 +1,6 @@
 export type Language = "zh" | "en";
 
-export type NavKey = "today" | "tomorrow" | "library" | "templates" | "stats" | "settings";
+export type NavKey = "planning" | "library" | "templates" | "stats" | "settings";
 
 export type CategoryKey = "all" | "study" | "work" | "life" | "fitness";
 

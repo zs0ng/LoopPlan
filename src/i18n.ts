@@ -5,8 +5,7 @@ const copy = {
     appName: "LoopPlan",
     brandSubtitle: "循环任务计划板",
     nav: {
-      today: "今日计划",
-      tomorrow: "明日计划",
+      planning: "计划安排",
       library: "任务库",
       templates: "模板",
       stats: "统计",
@@ -57,13 +56,9 @@ const copy = {
     minutes: "分钟",
     workInProgress: "后续可接入真实完成记录与统计计算",
     pages: {
-      today: {
-        title: "今日计划",
-        subtitle: "拖到时间线上开始安排今天的时间块"
-      },
-      tomorrow: {
-        title: "明日计划",
-        subtitle: "提前排好明天，降低开始成本"
+      planning: {
+        title: "计划安排",
+        subtitle: "拖到时间线上安排任务，用顶部日期切换管理今天和之后的计划"
       },
       library: {
         title: "任务库",
@@ -106,8 +101,7 @@ const copy = {
     appName: "LoopPlan",
     brandSubtitle: "Cycle Planning Board",
     nav: {
-      today: "Today",
-      tomorrow: "Tomorrow",
+      planning: "Planning",
       library: "Task Library",
       templates: "Templates",
       stats: "Stats",
@@ -158,13 +152,9 @@ const copy = {
     minutes: "min",
     workInProgress: "Wire real completion records and aggregated stats in the next phase.",
     pages: {
-      today: {
-        title: "Today",
-        subtitle: "Drag tasks onto the timeline to shape today's focus blocks."
-      },
-      tomorrow: {
-        title: "Tomorrow",
-        subtitle: "Stage tomorrow ahead of time so the first block is obvious."
+      planning: {
+        title: "Planning",
+        subtitle: "Drag tasks onto the timeline and switch dates from the header to manage today and upcoming plans."
       },
       library: {
         title: "Task Library",
