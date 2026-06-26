@@ -20,6 +20,7 @@ type TodayPlanPageProps = {
   onSelectBlock: (blockId: string) => void;
   onTaskDragEnd: () => void;
   onTaskDragStart: (task: Task) => void;
+  onTimeBlockDragStart: (blockId: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
 };
 
@@ -48,6 +49,8 @@ export function TodayPlanPage(props: TodayPlanPageProps) {
         onDateChange={props.onDateChange}
         onDropTask={props.onDropTask}
         onSelectBlock={props.onSelectBlock}
+        onTaskDragEnd={props.onTaskDragEnd}
+        onTimeBlockDragStart={props.onTimeBlockDragStart}
         onViewModeChange={props.onViewModeChange}
       />
       <DetailPanel block={selectedBlock} language={language} />

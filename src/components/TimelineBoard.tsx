@@ -22,6 +22,8 @@ type TimelineBoardProps = {
   onDateChange: (date: string) => void;
   onDropTask: (dropHour: number, dropMinute: number) => void;
   onSelectBlock: (blockId: string) => void;
+  onTaskDragEnd: () => void;
+  onTimeBlockDragStart: (blockId: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
 };
 
@@ -35,6 +37,8 @@ export function TimelineBoard({
   onDateChange,
   onDropTask,
   onSelectBlock,
+  onTaskDragEnd,
+  onTimeBlockDragStart,
   onViewModeChange
 }: TimelineBoardProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -155,6 +159,8 @@ export function TimelineBoard({
             language={language}
             selected={block.id === selectedBlockId}
             onSelect={() => onSelectBlock(block.id)}
+            onDragEnd={onTaskDragEnd}
+            onDragStart={() => onTimeBlockDragStart(block.id)}
           />
         ))}
 
@@ -183,11 +189,15 @@ function TimeBlockCard({
   block,
   language,
   selected,
+  onDragEnd,
+  onDragStart,
   onSelect
 }: {
   block: TimeBlock;
   language: Language;
   selected: boolean;
+  onDragEnd: () => void;
+  onDragStart: () => void;
   onSelect: () => void;
 }) {
   const top = ((minutesFromTime(block.start) - startHour * 60) / 60) * hourHeight;
@@ -196,6 +206,7 @@ function TimeBlockCard({
   return (
     <button
       className={`time-block ${selected ? "selected" : ""} ${block.status}`}
+      draggable
       style={
         {
           "--block-color": block.color,
@@ -203,6 +214,12 @@ function TimeBlockCard({
           height: `${height}px`
         } as CSSProperties
       }
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/time-block-id", block.id);
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
       onClick={onSelect}
     >
       <span className="time-block-icon">{block.icon}</span>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { tasks, templates, timeBlocks } from "./data";
-import { endHour, shiftDate } from "./utils";
+import { endHour, shiftDate, startHour } from "./utils";
 import type { CategoryKey, Language, NavKey, Task, TimeBlock, ViewMode } from "./types";
 import { TodayPlanPage } from "./pages/TodayPlanPage";
 import { TomorrowPlanPage } from "./pages/TomorrowPlanPage";
@@ -11,6 +11,22 @@ import { StatsPage } from "./pages/StatsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 const todayDate = "2026-06-17";
+type DraggedTimelineItem =
+  | { kind: "task"; task: Task }
+  | { kind: "block"; blockId: string };
+const formatTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+const getScheduledRange = (dropHour: number, dropMinute: number, duration: number) => {
+  const requestedStart = dropHour * 60 + dropMinute;
+  const latestStart = Math.max(startHour * 60, endHour * 60 - duration);
+  const boundedStart = Math.min(Math.max(requestedStart, startHour * 60), latestStart);
+
+  return {
+    start: formatTime(boundedStart),
+    end: formatTime(boundedStart + duration),
+    duration
+  };
+};
 
 function App() {
   const [activeNav, setActiveNav] = useState<NavKey>("today");
@@ -20,7 +36,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(todayDate);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>("tb-1");
   const [timelineBlocks, setTimelineBlocks] = useState<TimeBlock[]>(timeBlocks);
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [draggedItem, setDraggedItem] = useState<DraggedTimelineItem | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
   const visibleTasks = useMemo<Task[]>(() => {
@@ -56,35 +72,55 @@ function App() {
     }
   };
 
-  const handleDropTask = (dropHour: number, dropMinute: number) => {
-    if (!draggedTask) {
+  const handleTimelineDrop = (dropHour: number, dropMinute: number) => {
+    if (!draggedItem) {
       return;
     }
 
-    const startMinutes = dropHour * 60 + dropMinute;
-    const endMinutes = startMinutes + draggedTask.duration;
-    const clampedEnd = Math.min(endHour * 60, endMinutes);
-    const newBlock: TimeBlock = {
-      id: `tb-${crypto.randomUUID()}`,
-      taskId: draggedTask.id,
-      title: draggedTask.title,
-      date: selectedDate,
-      start: `${String(dropHour).padStart(2, "0")}:${String(dropMinute).padStart(2, "0")}`,
-      end: `${String(Math.floor(clampedEnd / 60)).padStart(2, "0")}:${String(clampedEnd % 60).padStart(2, "0")}`,
-      duration: clampedEnd - startMinutes,
-      category: draggedTask.category,
-      icon: draggedTask.icon,
-      color: draggedTask.color,
-      note: {
-        zh: "从任务库拖拽创建",
-        en: "Created by dragging from the task library."
-      },
-      status: "planned"
-    };
+    if (draggedItem.kind === "task") {
+      const nextRange = getScheduledRange(dropHour, dropMinute, draggedItem.task.duration);
+      const newBlock: TimeBlock = {
+        id: `tb-${crypto.randomUUID()}`,
+        taskId: draggedItem.task.id,
+        title: draggedItem.task.title,
+        date: selectedDate,
+        start: nextRange.start,
+        end: nextRange.end,
+        duration: nextRange.duration,
+        category: draggedItem.task.category,
+        icon: draggedItem.task.icon,
+        color: draggedItem.task.color,
+        note: {
+          zh: "从任务库拖拽创建",
+          en: "Created by dragging from the task library."
+        },
+        status: "planned"
+      };
 
-    setTimelineBlocks((current) => [...current, newBlock]);
-    setSelectedBlockId(newBlock.id);
-    setDraggedTask(null);
+      setTimelineBlocks((current) => [...current, newBlock]);
+      setSelectedBlockId(newBlock.id);
+      setDraggedItem(null);
+      return;
+    }
+
+    setTimelineBlocks((current) =>
+      current.map((block) => {
+        if (block.id !== draggedItem.blockId) {
+          return block;
+        }
+
+        const nextRange = getScheduledRange(dropHour, dropMinute, block.duration);
+        return {
+          ...block,
+          date: selectedDate,
+          start: nextRange.start,
+          end: nextRange.end,
+          duration: nextRange.duration
+        };
+      })
+    );
+    setSelectedBlockId(draggedItem.blockId);
+    setDraggedItem(null);
   };
 
   return (
@@ -101,7 +137,10 @@ function App() {
         {renderPage({
           activeCategory,
           activeNav,
-          draggedTask,
+          draggedTaskTitle:
+            draggedItem?.kind === "task"
+              ? draggedItem.task.title[language]
+              : timelineBlocks.find((block) => block.id === draggedItem?.blockId)?.title[language] ?? null,
           language,
           selectedBlock,
           selectedBlockId,
@@ -112,11 +151,12 @@ function App() {
           viewMode,
           onCategoryChange: setActiveCategory,
           onDateChange: setSelectedDate,
-          onDropTask: handleDropTask,
+          onDropTask: handleTimelineDrop,
           onLanguageChange: setLanguage,
           onSelectBlock: setSelectedBlockId,
-          onTaskDragEnd: () => setDraggedTask(null),
-          onTaskDragStart: setDraggedTask,
+          onTaskDragEnd: () => setDraggedItem(null),
+          onTaskDragStart: (task) => setDraggedItem({ kind: "task", task }),
+          onTimeBlockDragStart: (blockId) => setDraggedItem({ kind: "block", blockId }),
           onViewModeChange: setViewMode
         })}
       </div>
@@ -127,7 +167,7 @@ function App() {
 type RenderPageProps = {
   activeCategory: CategoryKey;
   activeNav: NavKey;
-  draggedTask: Task | null;
+  draggedTaskTitle: string | null;
   language: Language;
   selectedBlock: TimeBlock | null;
   selectedBlockId: string | null;
@@ -143,6 +183,7 @@ type RenderPageProps = {
   onSelectBlock: (blockId: string) => void;
   onTaskDragEnd: () => void;
   onTaskDragStart: (task: Task) => void;
+  onTimeBlockDragStart: (blockId: string) => void;
   onViewModeChange: (mode: ViewMode) => void;
 };
 
@@ -152,7 +193,7 @@ function renderPage(props: RenderPageProps) {
       return (
         <TodayPlanPage
           activeCategory={props.activeCategory}
-          draggedTaskTitle={props.draggedTask?.title[props.language] ?? null}
+          draggedTaskTitle={props.draggedTaskTitle}
           language={props.language}
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
@@ -166,6 +207,7 @@ function renderPage(props: RenderPageProps) {
           onSelectBlock={props.onSelectBlock}
           onTaskDragEnd={props.onTaskDragEnd}
           onTaskDragStart={props.onTaskDragStart}
+          onTimeBlockDragStart={props.onTimeBlockDragStart}
           onViewModeChange={props.onViewModeChange}
         />
       );
@@ -173,7 +215,7 @@ function renderPage(props: RenderPageProps) {
       return (
         <TomorrowPlanPage
           activeCategory={props.activeCategory}
-          draggedTaskTitle={props.draggedTask?.title[props.language] ?? null}
+          draggedTaskTitle={props.draggedTaskTitle}
           language={props.language}
           selectedBlock={props.selectedBlock}
           selectedBlockId={props.selectedBlockId}
@@ -187,6 +229,7 @@ function renderPage(props: RenderPageProps) {
           onSelectBlock={props.onSelectBlock}
           onTaskDragEnd={props.onTaskDragEnd}
           onTaskDragStart={props.onTaskDragStart}
+          onTimeBlockDragStart={props.onTimeBlockDragStart}
           onViewModeChange={props.onViewModeChange}
         />
       );
